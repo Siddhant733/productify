@@ -19,7 +19,10 @@ const razorpay = new Razorpay({
 
 app.use(
   cors({
-    origin: ENV.FRONTEND_URL,
+    origin: [
+      "https://productify-git-main-siddhant733s-projects.vercel.app",
+      "https://productify-weld.vercel.app",
+    ],
     credentials: true,
   })
 );
