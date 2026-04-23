@@ -1,49 +1,67 @@
 import api from "./axios";
 
-// USERS API
-export const syncUser = async (userData) => {
-  const { data } = await api.post("/users/sync", userData);
-  return data;
+// 🔹 Common API handler
+const handleApi = async (promise) => {
+  try {
+    const { data } = await promise;
+    return data;
+  } catch (err) {
+    throw err?.response?.data || err;
+  }
 };
 
-// Products API
+// USERS API
+export const syncUser = async (userData) => {
+  return handleApi(api.post("/users/sync", userData));
+};
+
+// PRODUCTS API
 export const getAllProducts = async () => {
-  const { data } = await api.get("/products");
-  return data;
+  return handleApi(api.get("/products"));
 };
 
 export const getProductById = async (id) => {
-  const { data } = await api.get(`/products/${id}`);
-  return data;
+  if (!id) throw new Error("Product ID is required");
+
+  return handleApi(api.get(`/products/${id}`));
 };
 
 export const getMyProducts = async () => {
-  const { data } = await api.get("/products/my");
-  return data;
+  return handleApi(api.get("/products/my"));
 };
 
 export const createProduct = async (productData) => {
-  const { data } = await api.post("/products", productData);
-  return data;
+  return handleApi(api.post("/products", productData));
 };
 
 export const updateProduct = async ({ id, ...productData }) => {
-  const { data } = await api.put(`/products/${id}`, productData);
-  return data;
+  if (!id) throw new Error("Product ID is required");
+
+  return handleApi(api.put(`/products/${id}`, productData));
 };
 
 export const deleteProduct = async (id) => {
-  const { data } = await api.delete(`/products/${id}`);
-  return data;
+  if (!id) throw new Error("Product ID is required");
+
+  return handleApi(api.delete(`/products/${id}`));
 };
 
-// Comments API
+// COMMENTS API
 export const createComment = async ({ productId, content }) => {
-  const { data } = await api.post(`/comments/${productId}`, { content });
-  return data;
+  if (!productId) throw new Error("Product ID is required");
+
+  return handleApi(api.post(`/comments/${productId}`, { content }));
 };
 
 export const deleteComment = async ({ commentId }) => {
-  const { data } = await api.delete(`/comments/${commentId}`);
-  return data;
+  if (!commentId) throw new Error("Comment ID is required");
+
+  return handleApi(api.delete(`/comments/${commentId}`));
+};
+
+// RAZORPAY PAYMENT API
+export const createRazorpayOrder = async ({ productId }) => {
+  if (!productId) throw new Error("Product ID is required");
+
+  return handleApi(api.post("/payments/create-order", { productId }));
 };

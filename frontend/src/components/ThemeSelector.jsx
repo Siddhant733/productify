@@ -45,8 +45,10 @@ function ThemeSelector() {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    if (typeof window !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    }
   }, [theme]);
 
   return (
@@ -63,12 +65,12 @@ function ThemeSelector() {
         {THEMES.map((t) => (
           <li key={t}>
             <button
+              type="button"
               onClick={() => setTheme(t)}
-              className={`flex justify-between ${
-                theme === t ? "bg-primary text-primary-content" : ""
-              }`}
+              className={`flex justify-between ${theme === t ? "bg-primary text-primary-content" : ""}`}
             >
               <span className="capitalize">{t}</span>
+
               <div className="flex gap-0.5" data-theme={t}>
                 <span className="w-2 h-4 rounded-sm bg-primary" />
                 <span className="w-2 h-4 rounded-sm bg-secondary" />
@@ -82,4 +84,5 @@ function ThemeSelector() {
     </div>
   );
 }
+
 export default ThemeSelector;

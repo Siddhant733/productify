@@ -9,12 +9,22 @@ import {
 } from "../lib/api";
 
 export const useProducts = () => {
-  const result = useQuery({ queryKey: ["products"], queryFn: getAllProducts });
-  return result;
+  return useQuery({
+    queryKey: ["products"],
+    queryFn: getAllProducts,
+  });
 };
 
 export const useCreateProduct = () => {
-  return useMutation({ mutationFn: createProduct });
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["myProducts"] });
+    },
+  });
 };
 
 export const useProduct = (id) => {
@@ -30,14 +40,19 @@ export const useDeleteProduct = () => {
 
   return useMutation({
     mutationFn: deleteProduct,
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["myProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["product", id] });
     },
   });
 };
 
 export const useMyProducts = () => {
-  return useQuery({ queryKey: ["myProducts"], queryFn: getMyProducts });
+  return useQuery({
+    queryKey: ["myProducts"],
+    queryFn: getMyProducts,
+  });
 };
 
 export const useUpdateProduct = () => {

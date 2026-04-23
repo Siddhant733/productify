@@ -1,34 +1,49 @@
 import { ArrowLeftIcon, ImageIcon, TypeIcon, FileTextIcon, SaveIcon } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 function EditProductForm({ product, isPending, isError, onSubmit }) {
   const [formData, setFormData] = useState({
-    title: product.title,
-    description: product.description,
-    imageUrl: product.imageUrl,
+    title: product.title || "",
+    description: product.description || "",
+    imageUrl: product.imageUrl || "",
   });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const payload = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      imageUrl: formData.imageUrl.trim(),
+    };
+
+    if (!payload.title || !payload.description || !payload.imageUrl) {
+      return;
+    }
+
+    onSubmit(payload);
+  };
 
   return (
     <div className="max-w-lg mx-auto">
       <Link to="/profile" className="btn btn-ghost btn-sm gap-1 mb-4">
-        <ArrowLeftIcon className="size-4" /> Back
+        <ArrowLeftIcon className="size-4" />
+        Back
       </Link>
 
-      <div className="card bg-base-300">
+      <div className="card bg-base-300 border border-base-200 shadow-sm">
         <div className="card-body">
           <h1 className="card-title">
             <SaveIcon className="size-5 text-primary" />
             Edit Product
           </h1>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSubmit(formData);
-            }}
-            className="space-y-4 mt-4"
-          >
+          <p className="text-sm text-base-content/60">
+            Update your product details and keep your listing fresh.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <label className="input input-bordered flex items-center gap-2 bg-base-200">
               <TypeIcon className="size-4 text-base-content/50" />
               <input
@@ -36,7 +51,9 @@ function EditProductForm({ product, isPending, isError, onSubmit }) {
                 placeholder="Product title"
                 className="grow"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
                 required
               />
             </label>
@@ -48,18 +65,22 @@ function EditProductForm({ product, isPending, isError, onSubmit }) {
                 placeholder="Image URL"
                 className="grow"
                 value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))
+                }
                 required
               />
             </label>
 
             {formData.imageUrl && (
-              <div className="rounded-box overflow-hidden">
+              <div className="rounded-box overflow-hidden border border-base-200 bg-base-200">
                 <img
                   src={formData.imageUrl}
                   alt="Preview"
                   className="w-full h-40 object-cover"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
             )}
@@ -71,7 +92,12 @@ function EditProductForm({ product, isPending, isError, onSubmit }) {
                   placeholder="Description"
                   className="grow bg-transparent resize-none focus:outline-none min-h-24"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
@@ -79,12 +105,20 @@ function EditProductForm({ product, isPending, isError, onSubmit }) {
 
             {isError && (
               <div role="alert" className="alert alert-error alert-sm">
-                <span>Failed to update. Try again.</span>
+                <span>Failed to update product. Please try again.</span>
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary w-full" disabled={isPending}>
-              {isPending ? <span className="loading loading-spinner" /> : "Save Changes"}
+            <button
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <span className="loading loading-spinner" />
+              ) : (
+                "Save Changes"
+              )}
             </button>
           </form>
         </div>
@@ -92,4 +126,5 @@ function EditProductForm({ product, isPending, isError, onSubmit }) {
     </div>
   );
 }
+
 export default EditProductForm;

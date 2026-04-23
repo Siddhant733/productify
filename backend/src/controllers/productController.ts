@@ -1,133 +1,212 @@
 import type { Request, Response } from "express";
-
 import * as queries from "../db/queries";
 import { getAuth } from "@clerk/express";
 
-// Get all products (public)
-export const getAllProducts = async (req: Request, res: Response) => {
+export const getAllProducts = async (_req: Request, res: Response) => {
   try {
     const products = await queries.getAllProducts();
-    res.status(200).json(products);
-  } catch (error) {
+    return res.status(200).json(products);
+  } catch (error: any) {
     console.error("Error getting products:", error);
-    res.status(500).json({ error: "Failed to get products" });
+    return res.status(500).json({
+      error: "Failed to get products",
+      details: error?.message || "Unknown error",
+    });
   }
 };
 
-// Get products by current user (protected)
 export const getMyProducts = async (req: Request, res: Response) => {
   try {
     const { userId } = getAuth(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     const products = await queries.getProductsByUserId(userId);
-    res.status(200).json(products);
-  } catch (error) {
+    return res.status(200).json(products);
+  } catch (error: any) {
     console.error("Error getting user products:", error);
-    res.status(500).json({ error: "Failed to get user products" });
+    return res.status(500).json({
+      error: "Failed to get user products",
+      details: error?.message || "Unknown error",
+    });
   }
 };
 
-// Get single product by ID (public)
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ error: "Product ID is required" });
+    }
+
     const product = await queries.getProductById(id);
 
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
 
-    res.status(200).json(product);
-  } catch (error) {
+    return res.status(200).json(product);
+  } catch (error: any) {
     console.error("Error getting product:", error);
-    res.status(500).json({ error: "Failed to get product" });
+    return res.status(500).json({
+      error: "Failed to get product",
+      details: error?.message || "Unknown error",
+    });
   }
 };
 
-// Create product (protected)
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const { userId } = getAuth(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { title, description, imageUrl } = req.body;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    if (!title || !description || !imageUrl) {
-      res.status(400).json({ error: "Title, description, and imageUrl are required" });
-      return;
+    const title = String(req.body?.title ?? "").trim();
+    const description = String(req.body?.description ?? "").trim();
+    const imageUrl = String(req.body?.imageUrl ?? "").trim();
+    const price = String(req.body?.price ?? "").trim();
+
+    if (!title || !description || !imageUrl || !price) {
+      return res.status(400).json({
+        error: "Title, description, imageUrl, and price are required",
+      });
+    }
+
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      return res.status(400).json({
+        error: "Price must be a valid number greater than 0",
+      });
     }
 
     const product = await queries.createProduct({
       title,
       description,
       imageUrl,
+      price,
       userId,
     });
 
-    res.status(201).json(product);
-  } catch (error) {
+    return res.status(201).json(product);
+  } catch (error: any) {
     console.error("Error creating product:", error);
-    res.status(500).json({ error: "Failed to create product" });
+    return res.status(500).json({
+      error: "Failed to create product",
+      details: error?.message || "Unknown error",
+    });
   }
 };
 
-// Update product (protected - owner only)
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { userId } = getAuth(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { id } = req.params;
-    const { title, description, imageUrl } = req.body;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    // Check if product exists and belongs to user
+    const id = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ error: "Product ID is required" });
+    }
+
+    const title = String(req.body?.title ?? "").trim();
+    const description = String(req.body?.description ?? "").trim();
+    const imageUrl = String(req.body?.imageUrl ?? "").trim();
+    const price = String(req.body?.price ?? "").trim();
+
     const existingProduct = await queries.getProductById(id);
+
     if (!existingProduct) {
-      res.status(404).json({ error: "Product not found" });
-      return;
+      return res.status(404).json({ error: "Product not found" });
     }
 
     if (existingProduct.userId !== userId) {
-      res.status(403).json({ error: "You can only update your own products" });
-      return;
+      return res.status(403).json({
+        error: "You can only update your own products",
+      });
+    }
+
+    if (!title || !description || !imageUrl || !price) {
+      return res.status(400).json({
+        error: "Title, description, imageUrl, and price are required",
+      });
+    }
+
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      return res.status(400).json({
+        error: "Price must be a valid number greater than 0",
+      });
     }
 
     const product = await queries.updateProduct(id, {
       title,
       description,
       imageUrl,
+      price,
     });
 
-    res.status(200).json(product);
-  } catch (error) {
+    return res.status(200).json(product);
+  } catch (error: any) {
     console.error("Error updating product:", error);
-    res.status(500).json({ error: "Failed to update product" });
+    return res.status(500).json({
+      error: "Failed to update product",
+      details: error?.message || "Unknown error",
+    });
   }
 };
 
-// Delete product (protected - owner only)
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const { userId } = getAuth(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { id } = req.params;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    // Check if product exists and belongs to user
+    const id = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ error: "Product ID is required" });
+    }
+
     const existingProduct = await queries.getProductById(id);
+
     if (!existingProduct) {
-      res.status(404).json({ error: "Product not found" });
-      return;
+      return res.status(404).json({ error: "Product not found" });
     }
 
     if (existingProduct.userId !== userId) {
-      res.status(403).json({ error: "You can only delete your own products" });
-      return;
+      return res.status(403).json({
+        error: "You can only delete your own products",
+      });
     }
 
     await queries.deleteProduct(id);
-    res.status(200).json({ message: "Product deleted successfully" });
-  } catch (error) {
+
+    return res.status(200).json({
+      message: "Product deleted successfully",
+    });
+  } catch (error: any) {
     console.error("Error deleting product:", error);
-    res.status(500).json({ error: "Failed to delete product" });
+    return res.status(500).json({
+      error: "Failed to delete product",
+      details: error?.message || "Unknown error",
+    });
   }
 };
